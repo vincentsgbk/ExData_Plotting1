@@ -23,7 +23,6 @@ if (!exists("powcon")) {
         names(powcon) = unlist(strsplit("Date;Time;Global_active_power;Global_reactive_power;Voltage;Global_intensity;Sub_metering_1;Sub_metering_2;Sub_metering_3",
                                         ";"))
         
-        
         # add a column to indicate the weekday
         library(lubridate)
         powcon <- mutate(powcon, wday = wday(dmy(Date), label = TRUE, abbr = TRUE))
