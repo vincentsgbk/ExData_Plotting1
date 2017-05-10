@@ -4,23 +4,18 @@ source("loadData.R")
 # set to plot only 1 graphic
 par(mfcol = c(1,1))
 
-# plotting without x-axis ticks
+# plotting to screen device
 with(powcon, 
-     plot(Sub_metering_1,
-          type = "n",
-          xaxt = "n",
-          xlab = "",
-          ylab = "Energy sub metering")
-)
-# add x-axis ticks
-with(powcon, 
-     axis(1, at = c(grep("Thu", wday)[1],grep("Fri", wday)[1], grep("Sat", wday)[1]), 
-          labels = c("Thu", "Fri", "Sat"))
-)
-# add lines
-lines(powcon$Sub_metering_1, type = "l", col = "black")
-lines(powcon$Sub_metering_2, type = "l", col = "red")
-lines(powcon$Sub_metering_3, type = "l", col = "blue")
+     c(plot(DateTime, #plot first line
+          Sub_metering_1, 
+          type = "l", 
+          col = "black",
+          xlab = "", 
+          ylab = "Energy sub metering"),
+       lines(DateTime,Sub_metering_2, type = "l", col = "red"), # add 2nd line
+       lines(DateTime,Sub_metering_3, type = "l", col = "blue") # add 3rd line
+))
+
 # add legends
 legend("topright", 
        legend = c("Sub_metering_1","Sub_metering_2","Sub_metering_3"), #legend text

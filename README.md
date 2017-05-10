@@ -35,31 +35,32 @@ date. There should be four PNG files and four R code files.
 setwd("~/R/expdata/ExData_Plotting1")
 
 library(dplyr)
+library(lubridate)
 
-# download and read if data frame object doesn't exist
+# if the object doesn't exist
 if (!exists("powcon")) {
         # download and unzip data
-        download.file("https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2Fhousehold_power_consumption.zip",
-                      "householdPowerConsumption.zip",
-                      method = "curl")
+        url = "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2Fhousehold_power_consumption.zip"
+        download.file(url, "householdPowerConsumption.zip", method = "curl")
         unzip("householdPowerConsumption.zip", exdir = "./")
         
         # load rows for from the dates 2007-02-01 and 2007-02-02 only
         powcon <- tbl_df(read.table("household_power_consumption.txt", 
-                             header = TRUE, 
                              sep = ";",
                              na.strings = "?",
                              skip = 66637,
-                             nrows = 2880))
-        
-        # col names
-        names(powcon) = unlist(strsplit("Date;Time;Global_active_power;Global_reactive_power;Voltage;Global_intensity;Sub_metering_1;Sub_metering_2;Sub_metering_3",
-                                        ";"))
-        
-        # add a column to indicate the weekday
-        library(lubridate)
-        powcon <- mutate(powcon, wday = wday(dmy(Date), label = TRUE, abbr = TRUE))
+                             nrows = 2880,
+                             col.names = colnames(read.table(
+                                     "household_power_consumption.txt",
+                                     nrows=1,
+                                     sep = ";",
+                                     header=TRUE))))
+
+        # combine date & time into POSITct
+        powcon = mutate(powcon, DateTime = dmy_hms(paste(Date,Time))) %>%
+                select(-c(Date, Time))
 }
+
 
 ```
 
@@ -71,14 +72,14 @@ source("loadData.R")
 # set to plot only 1 graphic
 par(mfcol = c(1,1))
 
-# plotting
+# plotting to screen device
 hist(powcon$Global_active_power, 
      col = "red", 
      main = "Global Active Power", 
      xlab = "Global Active Power (kilowatts)")
 
 # save to png
-dev.copy(png, file = "plot1.png", width = 480, height = 480)
+dev.copy(png, file = "plot1.png", width = 480, height = 480, units = "px")
 dev.off()
 ```
 
@@ -93,19 +94,14 @@ source("loadData.R")
 # set to plot only 1 graphic
 par(mfcol = c(1,1))
 
-# plotting without x-axis ticks
+# plotting to screen device
 with(powcon, 
-     plot(Global_active_power,
+     plot(DateTime,
+          Global_active_power,
           type = "l",
           col = "black", 
-          xaxt = "n",
           xlab = "",
           ylab = "Global Active Power (kilowatts)")
-)
-# add x-axis ticks
-with(powcon, 
-     axis(1, at = c(grep("Thu", wday)[1],grep("Fri", wday)[1], grep("Sat", wday)[1]), 
-          labels = c("Thu", "Fri", "Sat"))
 )
 
 # save to png
@@ -124,23 +120,18 @@ source("loadData.R")
 # set to plot only 1 graphic
 par(mfcol = c(1,1))
 
-# plotting without x-axis ticks
+# plotting to screen device
 with(powcon, 
-     plot(Sub_metering_1,
-          type = "n",
-          xaxt = "n",
-          xlab = "",
-          ylab = "Energy sub metering")
-)
-# add x-axis ticks
-with(powcon, 
-     axis(1, at = c(grep("Thu", wday)[1],grep("Fri", wday)[1], grep("Sat", wday)[1]), 
-          labels = c("Thu", "Fri", "Sat"))
-)
-# add lines
-lines(powcon$Sub_metering_1, type = "l", col = "black")
-lines(powcon$Sub_metering_2, type = "l", col = "red")
-lines(powcon$Sub_metering_3, type = "l", col = "blue")
+     c(plot(DateTime, #plot first line
+          Sub_metering_1, 
+          type = "l", 
+          col = "black",
+          xlab = "", 
+          ylab = "Energy sub metering"),
+       lines(DateTime,Sub_metering_2, type = "l", col = "red"), # add 2nd line
+       lines(DateTime,Sub_metering_3, type = "l", col = "blue") # add 3rd line
+))
+
 # add legends
 legend("topright", 
        legend = c("Sub_metering_1","Sub_metering_2","Sub_metering_3"), #legend text
@@ -165,32 +156,25 @@ source("loadData.R")
 # set the layout to plot 2x2 
 par(mfcol = c(2,2))
 
-# plotting graphic#1
-with(powcon, c(
-        plot(Global_active_power,
-             type = "l",
-             col = "black", 
-             xaxt = "n",
-             xlab = "",
-             ylab = "Global Active Power"),
-        axis(1, at = c(grep("Thu", wday)[1],grep("Fri", wday)[1], grep("Sat", wday)[1]), 
-             labels = c("Thu", "Fri", "Sat"))
-))
+# plotting graphic#1 
+with(powcon, plot(DateTime,
+                  Global_active_power,
+                  type = "l",
+                  col = "black", 
+                  xlab = "",
+                  ylab = "Global Active Power")
+)
 
 # plotting graphic#2
 with(powcon, c(
-        plot(Sub_metering_1,
-             type = "n",
-             xaxt = "n",
+        plot(DateTime,
+             Sub_metering_1,
+             type = "l",
              xlab = "",
              ylab = "Energy sub metering"),
-        # add x-axis ticks
-        axis(1, at = c(grep("Thu", wday)[1],grep("Fri", wday)[1], grep("Sat", wday)[1]), 
-             labels = c("Thu", "Fri", "Sat")),
         # add lines
-        lines(Sub_metering_1, type = "l", col = "black"),
-        lines(Sub_metering_2, type = "l", col = "red"),
-        lines(Sub_metering_3, type = "l", col = "blue"),
+        lines(DateTime,Sub_metering_2, type = "l", col = "red"),
+        lines(DateTime,Sub_metering_3, type = "l", col = "blue"),
         # add legends
         legend("topright", 
                legend = c("Sub_metering_1","Sub_metering_2","Sub_metering_3"), #legend text
@@ -202,30 +186,19 @@ with(powcon, c(
 ))
 
 # plotting graphic#3
-with(powcon, c(
-        plot(Voltage,
-             type = "l",
-             xaxt = "n",
-             xlab = "datetime",
-             ylab = "Voltage"),
-        # add x-axis ticks
-        axis(1, at = c(grep("Thu", wday)[1],grep("Fri", wday)[1], grep("Sat", wday)[1]), 
-             labels = c("Thu", "Fri", "Sat"))
-))
-
+with(powcon, plot(DateTime,
+                  Voltage,
+                  type = "l",
+                  xlab = "datetime",
+                  ylab = "Voltage")
+)
 
 # plotting graphic#4
-with(powcon, c(
-        plot(Global_reactive_power,
-             type = "l",
-             xaxt = "n",
-             xlab = "datetime"
-             #ylab = "Voltage"
-             ),
-        # add x-axis ticks
-        axis(1, at = c(grep("Thu", wday)[1],grep("Fri", wday)[1], grep("Sat", wday)[1]), 
-             labels = c("Thu", "Fri", "Sat"))
-))
+with(powcon, plot(DateTime,
+                  Global_reactive_power,
+                  type = "l",
+                  xlab = "datetime")
+)
 
 
 # save to png
